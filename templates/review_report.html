@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Review Interface - Content Flagging & Skill Tagging</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>📚 Story Review Interface</h1>
+        <div class="global-stats">
+            <span><strong>Total Stories:</strong> {{ total_stories }}</span>
+            <span><strong>Total Flags:</strong> {{ total_flags }}</span>
+            <span><strong>Total Skills:</strong> {{ total_skills }}</span>
+        </div>
+    </div>
+
+    {% if stories|length > 1 %}
+    <div class="story-selector">
+        <label for="story-select"><strong>Select Story:</strong></label>
+        <select id="story-select" onchange="switchStory(this.value)">
+            {% for story in stories %}
+            <option value="{{ loop.index0 }}" {% if loop.first %}selected{% endif %}>
+                {{ story.story_title }} (Grade {{ story.grade_level }})
+                {% if story.has_critical %}⚠️{% endif %}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    {% for story in stories %}
+    <div class="story-container" id="story-{{ loop.index0 }}" data-has-critical="{{ story.has_critical|lower }}" {% if not loop.first %}style="display: none;"{% endif %}>
+
+        <div class="story-info-header">
+            <h2>{{ story.story_title }}</h2>
+            <div class="metadata">
+                <span><strong>Story ID:</strong> {{ story.story_id }}</span>
+                <span><strong>Grade Level:</strong> {{ story.grade_level }}</span>
+                <span><strong>Flags:</strong> {{ story.flag_count }}</span>
+                <span><strong>Skills:</strong> {{ story.skill_count }}</span>
+                {% if story.has_critical %}
+                <span class="badge badge-critical">CRITICAL FLAGS</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab({{ loop.index0 }}, 'flagging')">
+                🚩 Content Flagging
+            </button>
+            <button class="tab-button" onclick="switchTab({{ loop.index0 }}, 'tagging')">
+                🏷️ Skill Tagging
+            </button>
+        </div>
+
+        <div id="flagging-view-{{ loop.index0 }}" class="tab-content active">
+            <h3 class="section-title">Content Flagging Review</h3>
+
+            {% if story.flagging %}
+            <div class="info-text">
+                <strong>Instructions:</strong> Review the highlighted story text below. Each highlighted span corresponds to a flagged sentence.
+                Sentences with multiple flags are shown in <span style="background-color: #9e9e9e; padding: 2px 4px;">gray</span>.
+                Confidence scores (0.0-1.0) indicate how certain the system is about each flag.
+            </div>
+
+            <h4>Highlighted Story Text</h4>
+            <div class="highlighted-story">
+                {{ story.flagging.highlighted_text | safe }}
+            </div>
+
+            <h4>Flag Details</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 16%;">Issue Type</th>
+                        <th style="width: 10%;">Severity</th>
+                        <th style="width: 8%;">Confidence</th>
+                        <th style="width: 28%;">Text Evidence</th>
+                        <th style="width: 33%;">Rationale</th>
+                        <th style="width: 5%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for flag in story.flagging.flags %}
+                    <tr id="story{{ loop.index0 }}-flag-{{ loop.index0 }}">
+                        <td>
+                            <input type="text" value="{{ flag.issue_type }}"
+                                   onchange="updateFlag('story{{ loop.index0 }}-flag-{{ loop.index0 }}')">
+                        </td>
+                        <td>
+                            <select onchange="updateFlag('story{{ loop.index0 }}-flag-{{ loop.index0 }}')">
+                                <option value="Low" {% if flag.severity == "Low" %}selected{% endif %}>Low</option>
+                                <option value="Medium" {% if flag.severity == "Medium" %}selected{% endif %}>Medium</option>
+                                <option value="High" {% if flag.severity == "High" %}selected{% endif %}>High</option>
+                                <option value="Critical" {% if flag.severity == "Critical" %}selected{% endif %}>Critical</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" class="confidence-{{ flag.confidence | confidence_level }}"
+                                   value="{{ flag.confidence }}" min="0" max="1" step="0.1"
+                                   onchange="updateFlag('story{{ loop.index0 }}-flag-{{ loop.index0 }}')">
+                        </td>
+                        <td><div class="evidence-text">{{ flag.text_evidence }}</div></td>
+                        <td><div class="rationale-text">{{ flag.rationale }}</div></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-success" onclick="acceptFlag('story{{ loop.index0 }}-flag-{{ loop.index0 }}')">✓</button>
+                                <button class="btn-danger" onclick="rejectFlag('story{{ loop.index0 }}-flag-{{ loop.index0 }}')">✗</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="margin-top: 15px;">
+                <button class="btn-add" >+ Add Missing Flag</button>
+            </div>
+            {% else %}
+            <div class="info-text">No flagging data available for this story.</div>
+            {% endif %}
+        </div>
+
+        <!-- Tagging View -->
+        <div id="tagging-view-{{ loop.index0 }}" class="tab-content">
+            <h3 class="section-title">Skill Tagging Review</h3>
+
+            {% if story.tagging %}
+            <div class="info-text">
+                <strong>Instructions:</strong> Review the assigned reading skills below. Sentences are highlighted by category:
+                <span class="skill-decoding" style="background-color: #3498db; padding: 2px 4px; color: white;">Decoding</span>,
+                <span class="skill-comprehension" style="background-color: #27ae60; padding: 2px 4px; color: white;">Comprehension</span>,
+                <span class="skill-vocabulary" style="background-color: #e74c3c; padding: 2px 4px; color: white;">Vocabulary</span>,
+                <span class="skill-knowledge" style="background-color: #f39c12; padding: 2px 4px; color: white;">Knowledge</span>,
+                <span class="skill-fluency" style="background-color: #9b59b6; padding: 2px 4px; color: white;">Fluency</span>.
+            </div>
+
+            <h4>Highlighted Story Text</h4>
+            <div class="highlighted-story">
+                {{ story.tagging.highlighted_text | safe }}
+            </div>
+
+            <h4>Skills by Category</h4>
+            <div class="category-summary">
+                {% for category, count in story.category_counts.items() %}
+                <div class="category-card" style="border-left-color: {{ category_colors[category] }};">
+                    <h5>{{ category }}</h5>
+                    <div class="count">{{ count }}</div>
+                    <small>skills tagged</small>
+                </div>
+                {% endfor %}
+            </div>
+
+            <h4>Assigned Skills</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">Skill ID</th>
+                        <th style="width: 15%;">Skill Name</th>
+                        <th style="width: 12%;">Category</th>
+                        <th style="width: 8%;">Confidence</th>
+                        <th style="width: 25%;">Sentence Evidence</th>
+                        <th style="width: 25%;">Rationale</th>
+                        <th style="width: 5%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tag in story.tagging.tags %}
+                    <tr id="story{{ loop.index0 }}-skill-{{ loop.index0 }}">
+                        <td><code>{{ tag.skill_id }}</code></td>
+                        <td>
+                            <input type="text" value="{{ tag.skill_name }}"
+                                   onchange="updateSkill('story{{ loop.index0 }}-skill-{{ loop.index0 }}')">
+                        </td>
+                        <td>
+                            <select onchange="updateSkill('story{{ loop.index0 }}-skill-{{ loop.index0 }}')">
+                                <option value="Decoding" {% if (tag.skill_id | extract_category) == "Decoding" %}selected{% endif %}>Decoding</option>
+                                <option value="Comprehension" {% if (tag.skill_id | extract_category) == "Comprehension" %}selected{% endif %}>Comprehension</option>
+                                <option value="Vocabulary" {% if (tag.skill_id | extract_category) == "Vocabulary" %}selected{% endif %}>Vocabulary</option>
+                                <option value="Knowledge" {% if (tag.skill_id | extract_category) == "Knowledge" %}selected{% endif %}>Knowledge</option>
+                                <option value="Fluency" {% if (tag.skill_id | extract_category) == "Fluency" %}selected{% endif %}>Fluency</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" class="confidence-{{ tag.confidence | confidence_level }}"
+                                   value="{{ tag.confidence }}" min="0" max="1" step="0.1"
+                                   onchange="updateSkill('story{{ loop.index0 }}-skill-{{ loop.index0 }}')">
+                        </td>
+                        <td><div class="evidence-text">{{ tag.sentence_evidence }}</div></td>
+                        <td><div class="rationale-text">{{ tag.rationale }}</div></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-success" onclick="acceptSkill('story{{ loop.index0 }}-skill-{{ loop.index0 }}')">✓</button>
+                                <button class="btn-danger" onclick="removeSkill('story{{ loop.index0 }}-skill-{{ loop.index0 }}')">✗</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="margin-top: 15px;">
+                <button class="btn-add" >+ Add Missing Skill</button>
+            </div>
+            {% else %}
+            <div class="info-text">No tagging data available for this story.</div>
+            {% endif %}
+        </div>
+
+    </div>
+    {% endfor %}
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="feedback-section">
+            <h3>Feedback & Comments</h3>
+            <p>Use this section to provide feedback. Your input will help us improve the results going forward.</p>
+            <textarea id="feedback-text" placeholder="Enter your feedback here..." style="width: 100%; min-height: 100px;"></textarea>
+            <button onclick="submitFeedback()" style="margin-top: 10px;">Submit Feedback</button>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 14px;">
+            <p><em>Note: This is a demonstration interface. Changes are not persisted to the backend.</em></p>
+        </div>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
