@@ -1,0 +1,9 @@
+pandas
+openai
+jinja2
+nltk
+python-dotenv
+tqdm
+
+pytest
+pytest-cov
