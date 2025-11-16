@@ -113,21 +113,21 @@ result = tagger.tag_story("story_001")
 
 ```
 repo/
-├── data/                     
-│   ├── stories.csv
-│   ├── content_rubric.md 
-│   └── skills.csv      
-├── src/                 
-│   ├── flagging/  
-│   ├── tagging/
-│   ├── report/
-│   └── utils/
-├── output/
-│   ├── human_review/
-│   └── machine_readable/
-├── tests/
-├── main.py
-├── requirements.txt 
-├── DESIGN.md
-└── FEEDBACK_PROPOSAL.md
+├── data/                      # Input data
+│   ├── stories.csv           # Children's stories dataset
+│   ├── content_rubric.md     # Content review guidelines
+│   └── skills.csv            # Reading skills taxonomy
+├── src/                       # Source code
+│   ├── flagging/             # Content flagging module
+│   ├── tagging/              # Skill tagging module
+│   ├── report/               # Report generation
+│   └── utils/                # Utilities and helpers
+├── output/                    # Generated outputs
+│   ├── human_review/         # HTML reports
+│   └── machine_readable/     # JSON/CSV files
+├── tests/                     # Unit and integration tests
+├── main.py                    # Main entry point
+├── requirements.txt           # Python dependencies
+├── DESIGN.md                  # Design decisions document
+└── FEEDBACK_PROPOSAL.md       # Feedback mechanism proposal
 ```
