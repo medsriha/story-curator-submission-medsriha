@@ -131,7 +131,3 @@ repo/
 ├── DESIGN.md                  # Design decisions document
 └── FEEDBACK_PROPOSAL.md       # Feedback mechanism proposal
 ```
-
-## Screenshot of the UI
-
-<img src="media/html_screenshot.png" alt="HTML Report Interface" width="800">
