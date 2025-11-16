@@ -17,16 +17,67 @@
     </div>
 
     {% if stories|length > 1 %}
-    <div class="story-selector">
-        <label for="story-select"><strong>Select Story:</strong></label>
-        <select id="story-select" onchange="switchStory(this.value)">
-            {% for story in stories %}
-            <option value="{{ loop.index0 }}" {% if loop.first %}selected{% endif %}>
-                {{ story.story_title }} (Grade {{ story.grade_level }})
-                {% if story.has_critical %}⚠️{% endif %}
-            </option>
-            {% endfor %}
-        </select>
+    <div class="story-controls">
+        <div class="controls-row">
+            <div class="control-group">
+                <label for="sort-select"><strong>Sort by:</strong></label>
+                <select id="sort-select" onchange="sortStories(this.value)">
+                    <option value="priority">Priority (Critical First)</option>
+                    <option value="title">Title (A-Z)</option>
+                    <option value="grade">Grade Level</option>
+                    <option value="flags">Flag Count</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="filter-critical">
+                    <input type="checkbox" id="filter-critical" onchange="filterStories()">
+                    Show Only Critical
+                </label>
+            </div>
+            <div class="control-group">
+                <label for="filter-grade"><strong>Grade:</strong></label>
+                <select id="filter-grade" onchange="filterStories()">
+                    <option value="all">All Grades</option>
+                    <option value="0">K</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="story-list">
+        {% for story in stories %}
+        <div class="story-card" data-index="{{ loop.index0 }}" data-has-critical="{{ story.has_critical|lower }}" data-grade="{{ story.grade_level }}" data-flags="{{ story.flag_count }}" data-title="{{ story.story_title }}" onclick="switchStory({{ loop.index0 }})">
+            <div class="story-card-header">
+                <div class="story-card-title">
+                    <span class="story-number">{{ loop.index }}.</span>
+                    <span class="story-title-text">{{ story.story_title }}</span>
+                </div>
+                <div class="story-card-badges">
+                    {% if story.has_critical %}
+                    <span class="badge badge-critical">CRITICAL</span>
+                    {% elif story.flag_count > 5 %}
+                    <span class="badge badge-high">HIGH</span>
+                    {% elif story.flag_count > 0 %}
+                    <span class="badge badge-medium">{{ story.flag_count }} flags</span>
+                    {% else %}
+                    <span class="badge badge-ok">OK</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="story-card-meta">
+                <span>Grade {{ story.grade_level }}</span>
+                <span>•</span>
+                <span>{{ story.flag_count }} flags</span>
+                <span>•</span>
+                <span>{{ story.skill_count }} skills</span>
+            </div>
+        </div>
+        {% endfor %}
     </div>
     {% endif %}
     {% for story in stories %}

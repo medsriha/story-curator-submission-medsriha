@@ -5,10 +5,94 @@ function switchStory(storyIndex) {
     const selectedStory = document.getElementById(`story-${storyIndex}`);
     if (selectedStory) {
         selectedStory.style.display = 'block';
-
-
         updateGlobalCriticalBadge(selectedStory);
     }
+
+    // Update selected card
+    const cards = document.querySelectorAll('.story-card');
+    cards.forEach(card => card.classList.remove('selected'));
+    const selectedCard = document.querySelector(`.story-card[data-index="${storyIndex}"]`);
+    if (selectedCard) {
+        selectedCard.classList.add('selected');
+        selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+function sortStories(sortBy) {
+    const storyList = document.querySelector('.story-list');
+    const cards = Array.from(document.querySelectorAll('.story-card'));
+
+    cards.sort((a, b) => {
+        if (sortBy === 'priority') {
+            // Critical first, then by flag count, then by title
+            const aCritical = a.dataset.hasCritical === 'true';
+            const bCritical = b.dataset.hasCritical === 'true';
+            if (aCritical !== bCritical) return bCritical - aCritical;
+
+            const aFlags = parseInt(a.dataset.flags);
+            const bFlags = parseInt(b.dataset.flags);
+            if (aFlags !== bFlags) return bFlags - aFlags;
+
+            return a.dataset.title.localeCompare(b.dataset.title);
+        } else if (sortBy === 'title') {
+            return a.dataset.title.localeCompare(b.dataset.title);
+        } else if (sortBy === 'grade') {
+            const aGrade = parseInt(a.dataset.grade);
+            const bGrade = parseInt(b.dataset.grade);
+            return aGrade - bGrade;
+        } else if (sortBy === 'flags') {
+            const aFlags = parseInt(a.dataset.flags);
+            const bFlags = parseInt(b.dataset.flags);
+            return bFlags - aFlags;
+        }
+        return 0;
+    });
+
+    // Re-append sorted cards
+    cards.forEach((card, index) => {
+        storyList.appendChild(card);
+        // Update story number
+        const numberSpan = card.querySelector('.story-number');
+        if (numberSpan) {
+            numberSpan.textContent = `${index + 1}.`;
+        }
+    });
+}
+
+function filterStories() {
+    const showOnlyCritical = document.getElementById('filter-critical').checked;
+    const selectedGrade = document.getElementById('filter-grade').value;
+    const cards = document.querySelectorAll('.story-card');
+
+    let visibleCount = 0;
+    cards.forEach(card => {
+        let show = true;
+
+        // Filter by critical
+        if (showOnlyCritical && card.dataset.hasCritical !== 'true') {
+            show = false;
+        }
+
+        // Filter by grade
+        if (selectedGrade !== 'all' && card.dataset.grade !== selectedGrade) {
+            show = false;
+        }
+
+        card.style.display = show ? 'block' : 'none';
+        if (show) visibleCount++;
+    });
+
+    // Update numbering for visible cards
+    let num = 1;
+    cards.forEach(card => {
+        if (card.style.display !== 'none') {
+            const numberSpan = card.querySelector('.story-number');
+            if (numberSpan) {
+                numberSpan.textContent = `${num}.`;
+            }
+            num++;
+        }
+    });
 }
 
 

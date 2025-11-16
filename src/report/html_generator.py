@@ -162,8 +162,12 @@ class HTMLReportGenerator:
 
             stories.append(story)
 
-        # Sort by story title
-        stories.sort(key=lambda s: s.get('story_title', ''))
+        # Sort by priority: has_critical (True first), then flag_count (descending), then title
+        stories.sort(key=lambda s: (
+            not s.get('has_critical', False),  # False < True, so negate to get True first
+            -s.get('flag_count', 0),           # Negative for descending order
+            s.get('story_title', '')           # Alphabetical
+        ))
 
         return stories
 
