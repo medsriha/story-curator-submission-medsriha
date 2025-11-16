@@ -55,7 +55,7 @@ Processing time: Approximately 5-10 minutes for all 96 stories with `gpt-4o-mini
 
 ##### Step 4: Access the Output
 
-**Option A: View HTML Report (Recommended)**
+**Option A: View HTML Report**
 
 Open the interactive HTML report in your browser:
 
